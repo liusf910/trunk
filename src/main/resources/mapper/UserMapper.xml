@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ln.tms.mapper.UserMapper">
+
+    <select id="queryUserAll" resultType="User" parameterType="User">
+        SELECT
+        u.user_id AS userId,
+        u.user_name AS userName,
+        u.logon_name AS logonName,
+        u.mobile,
+        u.email,
+        u.is_delete AS isDelete,
+        u.shipper_code AS shipperCode,
+        tmp.roleName,
+        tmp2.storageName,
+        tmp3.courierName
+        FROM
+        tms_user u
+        LEFT JOIN tms_courier c ON u.shipper_code = c.shipper_code
+        LEFT JOIN (
+        SELECT
+        ur.user_id,
+        group_concat(r.role_name) roleName
+        FROM
+        tms_role r
+        LEFT JOIN tms_user_role ur ON r.role_id = ur.role_id
+        GROUP BY
+        ur.user_id
+        ) tmp ON u.user_id = tmp.user_id
+        LEFT JOIN (
+        SELECT temp.user_id, group_concat(distinct s.storage_name) AS storageName
+        FROM tms_storage s,(select user_id,storage_code from tms_user) temp
+        WHERE temp.storage_code like concat("%",s.storage_code,"%")
+        group by temp.user_id
+        ) tmp2 ON u.user_id = tmp2.user_id
+        LEFT JOIN (
+        SELECT us.user_id,group_concat(distinct CONCAT(s.storage_name,"-",c.courier_name)) AS courierName
+        FROM tms_courier c
+        LEFT JOIN tms_user_storage us ON c.shipper_code = us.shipper_code
+        LEFT JOIN tms_storage s ON s.storage_code = us.storage_code
+        group by us.user_id
+        ) tmp3 ON u.user_id = tmp3.user_id
+        WHERE 1=1
+        <if test="logonName != null">
+            AND u.logon_name LIKE concat('%',#{logonName},'%')
+        </if>
+        <choose>
+            <when test="storageCode != null and shipperCode != null">
+                AND u.shipper_code LIKE concat('%',#{storageCode},'-',#{shipperCode},'%')
+            </when>
+            <when test="storageCode != null and shipperCode == null">
+                AND u.shipper_code LIKE concat('%',#{storageCode},'%')
+            </when>
+            <when test="storageCode == null and shipperCode != null">
+                AND u.shipper_code LIKE concat('%',#{shipperCode},'%')
+            </when>
+        </choose>
+        <if test="isDelete != null and isDelete != '' ">
+            AND u.is_delete = #{isDelete}
+        </if>
+        ORDER BY
+        u.create_date DESC
+        LIMIT #{begin,jdbcType=INTEGER},#{end,jdbcType=INTEGER}
+    </select>
+
+    <select id="queryTotal" resultType="java.lang.Integer" parameterType="User">
+        SELECT
+        COUNT(*)
+        FROM
+        tms_user u WHERE 1=1
+        <if test="logonName != null">
+            AND u.logon_name LIKE concat('%',#{logonName},'%')
+        </if>
+        <if test="storageCode != null and storageCode != '' ">
+            AND u.storage_code LIKE concat('%',#{storageCode},'%')
+        </if>
+        <if test="shipperCode != null and shipperCode != '' ">
+            AND u.shipper_code = #{shipperCode}
+        </if>
+        <if test="isDelete != null and isDelete != '' ">
+            AND u.is_delete = #{isDelete}
+        </if>
+    </select>
+
+    <!-- 逻辑删除用户 -->
+    <update id="deleteByIdLJ" parameterType="java.lang.String">
+        update tms_user set is_delete='1' where is_delete='0' and user_id=#{id}
+    </update>
+
+    <!-- 校验登录名字 -->
+    <select id="checkLogonName" parameterType="User" resultType="java.lang.Integer">
+        select COUNT(*)
+        from tms_user c
+        where 1=1 and c.is_delete='0'
+        <if test="userId != null and userId != '' ">
+            AND c.user_id &lt;&gt; #{userId}
+        </if>
+        <if test="logonName != null and logonName != '' ">
+            AND c.logon_name = #{logonName}
+        </if>
+    </select>
+
+    <select id="queryUserDetail" parameterType="java.lang.String" resultType="User">
+        SELECT
+        u.user_id AS userId,
+        u.user_name AS userName,
+        u.logon_name AS logonName,
+        u.mobile,
+        u.email,
+        u.is_delete AS isDelete,
+        u.`comment` as comment,
+        u.create_date as createDate,
+        u.modify_date as modifyDate,
+        c.shipper_code AS shipperCode,
+        c.courier_name AS courierName,
+        tmp.roleName,tmp2.storageName AS storageCode,
+        (select ct.logon_name from tms_user ct where ct.user_id = u.create_id) as createName,
+        (select la.logon_name from tms_user la where la.user_id = u.last_id) as lastName
+        FROM
+        tms_user u
+        LEFT JOIN tms_courier c ON u.shipper_code = c.shipper_code
+        LEFT JOIN (
+        SELECT
+        ur.user_id,
+        group_concat(r.role_name) roleName
+        FROM
+        tms_role r
+        LEFT JOIN tms_user_role ur ON r.role_id = ur.role_id
+        GROUP BY
+        ur.user_id
+        ) tmp ON u.user_id = tmp.user_id
+        LEFT JOIN (
+        SELECT
+        us.user_id,
+        group_concat(s.storage_name) storageName
+        FROM
+        tms_storage s
+        LEFT JOIN tms_user_storage us ON s.storage_code = us.storage_code
+        GROUP BY
+        us.user_id
+        ) tmp2 ON u.user_id = tmp2.user_id
+        where u.user_id = #{userId}
+    </select>
+
+    <!--  根据用户id获取对应的仓库 -->
+    <select id="getUserStorage" parameterType="String" resultType="UserStorage">
+        SELECT user_id,storage_code
+        FROM tms_user_storage
+        WHERE user_id=#{userId}
+    </select>
+
+    <!--  保存用户信息 -->
+    <insert id="saveUser" parameterType="User">
+        INSERT INTO tms_user
+        (user_id,storage_code,shipper_code,user_name,logon_name,logon_pwd,email,mobile,is_delete,create_id,last_id,create_date,modify_date)
+        VALUES
+        (#{userId},#{storageCode},#{shipperCode},#{userName},#{logonName},#{logonPwd},#{email},#{mobile},#{isDelete},#{createId},#{lastId},now(),now())
+    </insert>
+
+    <!--  根据用户id获取对应的快递公司 -->
+    <select id="getUserCourier" parameterType="String" resultType="Courier">
+        SELECT c.shipper_code,c.courier_name
+        FROM tms_user u
+        LEFT JOIN tms_courier c ON u.shipper_code=c.shipper_code
+        WHERE u.is_delete='0' and u.user_id=#{userId}
+    </select>
+    <select id="queryPmsByUserId" parameterType="java.lang.String" resultType="java.lang.String">
+        SELECT
+        per.url
+        FROM
+        tms_permission per
+        WHERE
+        per.mid IN (
+        SELECT DISTINCT
+        (rp.mid)
+        FROM
+        tms_role_popedom rp
+        WHERE
+        rp.role_id IN (
+        SELECT
+        r.role_id
+        FROM
+        tms_user u
+        INNER JOIN tms_user_role r ON r.user_id = u.user_id
+        AND u.user_id = #{userId}
+        )
+        )
+    </select>
+
+    <!-- 获取用户绑定的仓库 -->
+    <select id="getBindUserStorage" parameterType="String" resultType="Storage">
+        SELECT s.storage_code AS storageCode,s.storage_name AS storageName
+        FROM tms_storage s
+        LEFT JOIN tms_user_storage us ON us.storage_code=s.storage_code
+        WHERE s.is_delete='0' AND us.user_id=#{userId}
+    </select>
+
+    <!-- 根据用户id查询用户信息 -->
+    <select id="queryByIdNew" parameterType="String" resultType="User">
+        SELECT
+        u.user_id AS userId,
+        u.user_name AS userName,
+        u.logon_name AS logonName,
+        u.mobile,
+        u.email,
+        u.is_delete AS isDelete,
+        u.shipper_code AS shipperCode,
+        u.storage_code AS storageCode,
+        tmp.roleName,
+        tmp2.storageName,
+        tmp3.courierName,
+        (select ct.logon_name from tms_user ct where ct.user_id = u.create_id) as createName,
+        (select la.logon_name from tms_user la where la.user_id = u.last_id) as lastName,
+        u.is_delete AS isDelete,
+        u.`comment` as comment,
+        u.create_date as createDate,
+        u.modify_date as modifyDate
+        FROM
+        tms_user u
+        LEFT JOIN tms_courier c ON u.shipper_code = c.shipper_code
+        LEFT JOIN (
+        SELECT
+        ur.user_id,
+        group_concat(r.role_name) roleName
+        FROM
+        tms_role r
+        LEFT JOIN tms_user_role ur ON r.role_id = ur.role_id
+        GROUP BY
+        ur.user_id
+        ) tmp ON u.user_id = tmp.user_id
+        LEFT JOIN (
+        SELECT temp.user_id, group_concat(distinct s.storage_name) AS storageName
+        FROM tms_storage s,(select user_id,storage_code from tms_user) temp
+        WHERE temp.storage_code like concat("%",s.storage_code,"%")
+        group by temp.user_id
+        ) tmp2 ON u.user_id = tmp2.user_id
+        LEFT JOIN (
+        SELECT us.user_id,group_concat(distinct CONCAT(s.storage_name,"-",c.courier_name)) AS courierName
+        FROM tms_courier c
+        LEFT JOIN tms_user_storage us ON c.shipper_code = us.shipper_code
+        LEFT JOIN tms_storage s ON s.storage_code = us.storage_code
+        group by us.user_id
+        ) tmp3 ON u.user_id = tmp3.user_id
+        WHERE u.user_id=#{userId}
+    </select>
+
+</mapper>

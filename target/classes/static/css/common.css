@@ -1,0 +1,7 @@
+.write {
+    color: red;
+}
+
+.write.left{
+    margin-left: 35px;
+}

@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ln.tms.mapper.StorageMapper">
+
+    <!-- 查询仓库列表 -->
+    <select id="queryStoragePage" parameterType="Storage" resultType="Storage">
+        SELECT s.storage_code AS storageCode,s.storage_name AS storageName,tmp.courierName
+        FROM tms_storage s
+        LEFT JOIN (
+        SELECT
+        sc.storage_code,
+        group_concat(c.courier_name) courierName
+        FROM
+        tms_courier c
+        LEFT JOIN tms_storage_courier sc ON c.shipper_code = sc.shipper_code
+        GROUP BY sc.storage_code
+        ) tmp ON s.storage_code = tmp.storage_code
+        WHERE s.is_delete='0'
+        <if test="storageCode != null and storageCode != '' ">
+            AND s.storage_code LIKE concat('%',#{storageCode},'%')
+        </if>
+        <if test="storageName != null and storageName != '' ">
+            AND s.storage_name LIKE concat('%', #{storageName},'%')
+        </if>
+        ORDER BY
+        s.create_date DESC
+        LIMIT #{begin,jdbcType=INTEGER},#{end,jdbcType=INTEGER}
+    </select>
+
+
+    <!-- 查询仓库总条数 -->
+    <select id="getStorageTotal" parameterType="Storage" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM tms_storage s
+        WHERE s.is_delete='0'
+        <if test="storageCode != null and storageCode != '' ">
+            AND s.storage_code LIKE concat('%',#{storageCode},'%')
+        </if>
+        <if test="storageName != null and storageName != '' ">
+            AND s.storage_name LIKE concat('%', #{storageName},'%')
+        </if>
+    </select>
+
+    <!-- 根据storageCode查询仓库信息 -->
+    <select id="getStorageBySCode" parameterType="String" resultType="Storage">
+		SELECT  s.storage_code AS storageCode,s.storage_name AS storageName,tmp.courierName
+		FROM tms_storage s
+		LEFT JOIN (
+	        SELECT
+	        sc.storage_code,
+	        group_concat(c.courier_name) courierName
+	        FROM
+	        tms_courier c
+	        LEFT JOIN tms_storage_courier sc ON c.shipper_code = sc.shipper_code
+	        GROUP BY
+	        sc.storage_code
+        ) tmp ON s.storage_code = tmp.storage_code
+		WHERE s.storage_code=#{storageCode} and s.is_delete='0'
+	</select>
+
+    <!-- 保存仓库信息 -->
+    <insert id="saveStorage" parameterType="Storage">
+		INSERT INTO tms_storage
+		(storage_code,storage_name,create_date,modify_date)
+		VALUES 
+		(#{storageCode},#{storageName},now(),now())
+	</insert>
+
+    <!-- 保存仓库和快递公司关联信息 -->
+    <insert id="saveStorageCourier" parameterType="StorageCourier">
+		INSERT INTO tms_storage_courier
+		(storage_code,shipper_code)
+		VALUES 
+		(#{storageCode},#{shipperCode})
+	</insert>
+
+    <!-- 校验仓库编号 -->
+    <select id="checkStorageCode" parameterType="Storage" resultType="java.lang.Integer">
+		select COUNT(*) 
+		from tms_storage s
+		where s.storage_code=#{storageCode}
+	</select>
+
+    <!-- 校验仓库名称 -->
+    <select id="checkStorageName" parameterType="Storage" resultType="java.lang.Integer">
+        select COUNT(*)
+        from tms_storage s
+        where s.is_delete='0'
+        <if test="storageCode != null and storageCode != '' ">
+            AND s.storage_code &lt;&gt; #{storageCode}
+        </if>
+        <if test="storageName != null and storageName != '' ">
+            AND s.storage_name = #{storageName}
+        </if>
+    </select>
+
+    <!-- 删除仓库 -->
+    <update id="deleteStorageByCode" parameterType="String">
+		UPDATE tms_storage SET is_delete='1'
+		WHERE  storage_code=#{storageCode} and is_delete='0'
+	</update>
+
+    <!-- 获取仓库对应的快递公司信息 -->
+    <select id="getStorageCouriers" parameterType="String" resultType="StorageCourier">
+		SELECT storage_code,shipper_code
+	    FROM tms_storage_courier 
+	    WHERE storage_code=#{storageCode}
+	</select>
+
+    <!-- 修改仓库信息 -->
+    <update id="updateStorage" parameterType="Storage">
+		UPDATE tms_storage SET storage_name=#{storageName}
+		WHERE  storage_code=#{storageCode} and is_delete='0'
+	</update>
+
+    <!-- 删除已关联的快递信息 -->
+    <delete id="deleteStorageCourier" parameterType="Storage">
+		DELETE FROM tms_storage_courier WHERE storage_code=#{storageCode}
+	</delete>
+
+    <!-- 查询仓库列表 -->
+    <select id="queryAllNew" resultType="Storage">
+		SELECT  s.storage_code AS storageCode,s.storage_name AS storageName
+		FROM tms_storage s
+		WHERE s.is_delete='0'
+        ORDER BY s.create_date DESC
+	</select>
+
+    <!-- 根据仓库获取对应的快递公司 -->
+    <select id="getCouriers" parameterType="list" resultType="Courier">
+        SELECT DISTINCT c.shipper_code,c.courier_name
+        FROM tms_courier c
+        LEFT JOIN tms_storage_courier sc ON c.shipper_code=sc.shipper_code
+        WHERE sc.storage_code in (
+        <foreach collection="list" item="item" index="index" separator=",">
+            #{item}
+        </foreach>
+        )
+    </select>
+
+    <!-- 获取仓库和用户是否关联 -->
+    <select id="getBindUserStorage" parameterType="String" resultType="Integer">
+		SELECT count(us.user_id) FROM tms_user_storage us
+		INNER JOIN tms_user u ON us.user_id=u.user_id AND u.is_delete='0'
+		WHERE us.storage_code=#{storageCode}
+	</select>
+
+    <!--根据用户ID查询用户所属仓库-->
+    <select id="getByUserId" resultType="Storage">
+        SELECT
+        s.storage_code,
+        s.storage_name
+        FROM
+        tms_user AS u
+        LEFT JOIN tms_user_storage AS o ON u.user_id = o.user_id
+        INNER JOIN tms_storage AS s ON o.storage_code = s.storage_code
+        WHERE u.user_id=#{userId}
+    </select>
+    
+    <!--根据仓库获取对应的快递公司New-->
+    <select id="getCouriersNew" parameterType="String" resultType="Courier">
+    	SELECT c.shipper_code AS shipperCode,c.courier_name AS  courierName
+    	FROM tms_courier c
+    	LEFT JOIN tms_storage_courier sc ON c.shipper_code=sc.shipper_code
+    	WHERE sc.storage_code=#{storageCode}
+    </select>
+    
+    <!-- 获取全部仓库快递公司 -->
+    <select id="getAllStorageCourier"   resultType="StorageCourier">
+    	SELECT s.storage_code AS storageCode,s.storage_name AS storageName,
+							c.shipper_code AS shipperCode,c.courier_name AS  courierName
+    	FROM tms_courier c
+    	LEFT JOIN tms_storage_courier sc ON c.shipper_code=sc.shipper_code
+		LEFT JOIN tms_storage s          ON s.storage_code=sc.storage_code
+		WHERE 1=1
+		<if test="where.storageCode != null and where.storageCode != '' ">
+            AND s.storage_code IN (${where.storageCode})
+        </if>
+        <if test="where.shipperCode != null and where.shipperCode != '' ">
+            AND c.shipper_code IN (${where.shipperCode})
+        </if>
+        ORDER BY s.storage_code,c.shipper_code
+    </select>
+    
+    
+    <!-- 获取用户对应的仓库快递公司 -->
+    <select id="getStorageCourierByUserId"   resultType="StorageCourier">
+    	SELECT s.storage_code AS storageCode,s.storage_name AS storageName,
+							c.shipper_code AS shipperCode,c.courier_name AS  courierName
+    	FROM tms_courier c
+    	LEFT JOIN tms_storage_courier sc ON c.shipper_code=sc.shipper_code
+		LEFT JOIN tms_storage s          ON s.storage_code=sc.storage_code
+		LEFT JOIN tms_user_storage  tus  ON tus.storage_code=sc.storage_code and  tus.shipper_code=sc.shipper_code
+		WHERE 1=1
+		<if test="where.storageCode != null and where.storageCode != '' ">
+            AND s.storage_code IN (${where.storageCode})
+        </if>
+        <if test="where.shipperCode != null and where.shipperCode != '' ">
+            AND c.shipper_code IN (${where.shipperCode})
+        </if>
+        <if test="where.userId != null and where.userId != '' ">
+            AND tus.user_id =#{where.userId}
+        </if>
+        ORDER BY s.storage_code,c.shipper_code
+    </select>
+    
+
+    <select id="queryBindUserStorage" parameterType="String" resultType="Storage">
+        SELECT DISTINCT(s.storage_code),s.storage_name
+        FROM tms_storage s
+        LEFT JOIN tms_user_storage us ON us.storage_code=s.storage_code
+        WHERE s.is_delete='0' AND us.user_id=#{userId}
+    </select>
+
+    <!--查询用户仓库下绑定的快递-->
+    <select id="queryCourierByUser" resultType="java.lang.String" parameterType="UserStorage">
+        select GROUP_CONCAT(DISTINCT s.shipper_code) from tms_user_storage s where
+        s.storage_code in (${storageCode}) AND s.user_id = #{userId}
+    </select>
+    
+</mapper>

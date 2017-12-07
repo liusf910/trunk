@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ln.tms.mapper.InfoTsTempMapper">
+    <insert id="saveInfoTsTempBatch" parameterType="java.util.List">
+        INSERT INTO tms_info_ts_temp
+        (courier_name,logistic_code,took_reason,sign_reason,file_took_time,file_sign_time,
+        order_status,sign_str,flag,create_date,modify_date)
+        VALUES
+        <foreach collection="list" item="ts" index="index" separator=",">
+            (#{ts.courierName},#{ts.logisticCode},#{ts.tookReason},#{ts.signReason},
+            #{ts.fileTookTime},#{ts.fileSignTime},#{ts.orderStatus},#{ts.signStr},'0',now(),now())
+        </foreach>
+    </insert>
+
+    <delete id="clearInfoTsTemp">
+         DELETE FROM tms_info_ts_temp
+    </delete>
+
+    <update id="updateShipperCode">
+        UPDATE tms_info_ts_temp AS ts
+        INNER JOIN tms_courier AS c ON ts.courier_name = c.courier_name
+        SET ts.shipper_code = c.shipper_code
+    </update>
+
+    <update id="updateIgnoreRepeat">
+        UPDATE tms_info_ts_temp tp INNER JOIN tms_info_ts ts
+        ON tp.logistic_code = ts.logistic_code and tp.shipper_code = ts.shipper_code
+        SET tp.flag = '2' WHERE (tp.took_reason = ts.took_reason and tp.file_took_time = ts.file_took_time)
+        OR locate(tp.sign_str,ts.sign_str) &gt; 0 and tp.flag = '0'
+    </update>
+
+    <update id="updateIgnoreTook">
+        UPDATE tms_info_ts_temp tp INNER JOIN tms_info t
+        ON tp.logistic_code = t.logistic_code and tp.shipper_code = t.shipper_code
+        SET tp.flag = '3' WHERE t.took_time is not null AND tp.flag = '0'
+    </update>
+
+    <update id="updateTookBatch">
+        update tms_info_ts ts,tms_info_ts_temp tp set ts.modify_date = now(),ts.time_out = tp.time_out,
+        ts.took_reason =tp.took_reason,ts.file_took_time = tp.file_took_time,tp.flag = '1'
+        where ts.logistic_code = tp.logistic_code and ts.shipper_code = tp.shipper_code
+        and tp.flag = '0'
+    </update>
+
+    <update id="updateSignBatch">
+        update tms_info_ts ts,tms_info_ts_temp tp set ts.modify_date = now(),ts.order_status = tp.order_status,
+        ts.sign_reason = tp.sign_reason,ts.file_sign_time = tp.file_sign_time,
+        ts.sign_str = CONCAT_WS('',IFNULL(ts.sign_str,''),tp.sign_str),
+        ts.time_out = tp.time_out,tp.flag = '1'
+        where ts.logistic_code = tp.logistic_code and ts.shipper_code = tp.shipper_code and tp.flag = '0'
+    </update>
+
+    <insert id="saveBatch">
+        insert into tms_info_ts(shipper_code,logistic_code,time_out,took_reason,sign_reason,file_sign_time,
+        file_took_time,order_status,sign_str,create_date,modify_date) select tp.shipper_code,tp.logistic_code,tp.time_out,
+        tp.took_reason,tp.sign_reason,tp.file_sign_time,tp.file_took_time,tp.order_status,tp.sign_str,now(),now()
+        from tms_info_ts_temp tp where tp.flag = '0'
+    </insert>
+
+    <select id="queryInfos" resultType="com.ln.tms.pojo.InfoTsTemp">
+        select tp.logistic_code,tp.shipper_code,f.order_code,tp.courier_name,tp.order_status,
+               tp.took_reason,tp.sign_reason,tp.flag,
+               date_format(tp.file_took_time,'%Y-%m-%d %H:%i:%s') as fileTookTime,
+               date_format(tp.file_sign_time,'%Y-%m-%d %H:%i:%s') as fileSignTime,
+               f.linkman as customName,f.plan_time,f.over_day,
+               date_format(f.shipments_time,'%Y-%m-%d') as ShipmentsDate,
+               date_format(f.shipments_time,'%Y-%m-%d %H:%i:%s') as shipmentsTime
+        from tms_info_ts_temp tp left join tms_info f on tp.logistic_code = f.logistic_code
+        and tp.shipper_code = f.shipper_code
+     </select>
+
+    <select id="lockTable">
+        LOCK TABLES tms_info_ts_temp as tp WRITE,tms_info_ts as ts WRITE,tms_info_ts WRITE
+    </select>
+    <select id="unlockTable">
+        UNLOCK TABLES
+    </select>
+    
+    
+    <update id="updTookInfoState">
+        update tms_info ts,tms_info_ts_temp tp set ts.state = '1'
+        where ts.logistic_code = tp.logistic_code and ts.shipper_code = tp.shipper_code and (tp.flag = '0' or tp.flag = '1')
+    </update>
+    
+    <select id="getTsTempsInfo" resultType="Info">
+        select ts.info_id,ts.logistic_code AS logisticCode,ts.shipper_code AS shipperCode,
+               ts.plan_time AS planTime,ts.sign_time AS signTime,tp.file_sign_time AS fileSignTime,
+               tp.order_status AS orderStatus,ts.shipments_time AS shipmentsTime
+        from tms_info ts,tms_info_ts_temp tp 
+        where ts.logistic_code = tp.logistic_code and ts.shipper_code = tp.shipper_code and (tp.flag = '0' or tp.flag = '1')
+    </select>
+    
+    <update id="updSignInfoState" parameterType="Info">
+        update tms_info ts set ts.state=#{state},ts.over_day=#{overDay},ts.attrit_day=#{attritDay}
+        where ts.info_id = #{infoId}
+    </update>
+</mapper>

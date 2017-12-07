@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ln.tms.mapper.FileupMapper">
+
+    <select id="queryFileupList" resultType="Fileup" parameterType="Fileup">
+        SELECT
+        f.file_id as fileId,
+        f.file_name as fileName,
+        f.belong_to as belongTo,
+        u.logon_name as logonName,
+        f.ip,
+        f.create_date as createDate,
+        f.file_url as fileUrl
+        FROM
+        tms_fileup f
+        LEFT JOIN tms_user u ON f.user_id = u.user_id
+        <where>
+            <if test="userId != null and userId != '' ">
+                AND f.user_id = #{userId}
+            </if>
+            <if test="startDate != null and startDate != '' ">
+                AND f.create_date &gt;= concat(#{startDate},' 00:00:00')
+            </if>
+            <if test="endDate != null and endDate != '' ">
+                AND f.create_date &lt;= concat(#{endDate},' 23:59:59')
+            </if>
+            <choose>
+                <when test="tookSign != false and belongTo == null">
+                    AND f.belong_to in ('1-1','2-1')
+                </when>
+                <when test="belongTo != null">
+                    AND f.belong_to = #{belongTo}
+                </when>
+            </choose>
+        </where>
+        ORDER BY f.create_date DESC
+        LIMIT #{begin,jdbcType=INTEGER},#{end,jdbcType=INTEGER}
+    </select>
+
+    <select id="queryTotal" resultType="java.lang.Integer" parameterType="Fileup">
+        SELECT
+        COUNT(*)
+        FROM
+        tms_fileup f
+        <where>
+            <if test="userId != null and userId != '' ">
+                AND f.user_id = #{userId}
+            </if>
+            <if test="startDate != null and startDate != '' ">
+                AND f.create_date &gt;= concat(#{startDate},' 00:00:00')
+            </if>
+            <if test="endDate != null and endDate != '' ">
+                AND f.create_date &lt;= concat(#{endDate},' 23:59:59')
+            </if>
+            <choose>
+                <when test="tookSign != false and belongTo == null">
+                    AND f.belong_to in ('1-1','2-1')
+                </when>
+                <when test="belongTo != null">
+                    AND f.belong_to = #{belongTo}
+                </when>
+            </choose>
+        </where>
+    </select>
+</mapper>

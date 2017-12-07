@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ln.tms.mapper.InfoTraceMapper">
+    <insert id="insertInfoTrace" parameterType="list">
+        INSERT INTO tms_info_trace (
+        info_id
+        )
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.infoId}
+            )
+        </foreach>
+    </insert>
+
+    <delete id="deleteByIds" parameterType="list">
+        DELETE FROM tms_info_trace WHERE info_id IN
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+</mapper>

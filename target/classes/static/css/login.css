@@ -1,0 +1,128 @@
+body {
+    background: url(../images/loginbg_01.jpg) no-repeat center center fixed;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+}
+
+a:link {
+    color: #285e8e;
+}
+
+.main_box {
+    position: absolute;
+    padding: 30px;
+    width: 600px;
+    height: 460px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px #DDD solid;
+    border-radius: 5px;
+    -webkit-box-shadow: 1px 5px 8px #888888;
+    -moz-box-shadow: 1px 5px 8px #888888;
+    box-shadow: 1px 5px 8px #888888;
+    margin: 100px 365px;
+}
+
+.main_box .setting {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    width: 10px;
+    height: 10px;
+}
+
+.main_box .setting a {
+    color: #FF6600;
+}
+
+.main_box .setting a:hover {
+    color: #555;
+}
+
+.login_logo {
+    margin-bottom: 20px;
+    height: 45px;
+    text-align: center;
+}
+
+.login_logo img {
+    height: 45px;
+}
+
+.login_msg {
+    text-align: center;
+    font-size: 16px;
+}
+
+.login_form {
+    padding-top: 20px;
+}
+
+.login_box .form-control {
+    display: inline-block;
+    *display: inline;
+    font-size: 18px;
+}
+
+.login_box .form-control.x319 {
+    width: 319px;
+    height: 33px;
+    border-radius: 5px;
+}
+
+.login_box .form-control.x164 {
+    width: 164px;
+}
+
+.login_box .form-group {
+    margin-bottom: 20px;
+}
+
+.login_box .form-group label.t {
+    width: 120px;
+    text-align: right;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.login_box .form-group.space {
+    padding: 16px;
+    border-top: 1px #FFF dotted;
+}
+
+.login_box .form-group img {
+    margin-top: 1px;
+    height: 32px;
+    vertical-align: top;
+}
+
+.login_box .m {
+    cursor: pointer;
+}
+
+.bottom {
+    text-align: center;
+    font-size: 12px;
+}
+
+#errorie {
+    position: fixed;
+    top: 0;
+    z-index: 10;
+    height: 30px;
+    background: #FCF8E3;
+}
+
+.info {
+    color: red;
+    margin: 0px 125px;
+    font-size: 15px;
+    font-family:'微软雅黑';
+}
+
+.login_box .form-control.x260 {
+    width: 255px;
+    height: 33px;
+    border-radius: 5px;
+}

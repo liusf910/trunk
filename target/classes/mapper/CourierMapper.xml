@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ln.tms.mapper.CourierMapper">
+
+
+    <!-- 校验快递公司名称 -->
+    <select id="checkCourierName" parameterType="Courier" resultType="java.lang.Integer">
+        select COUNT(*)
+        from tms_courier c
+        where 1=1
+        <if test="shipperCode != null and shipperCode != '' ">
+            AND c.shipper_code &lt;&gt; #{shipperCode}
+        </if>
+        <if test="courierName != null and courierName != '' ">
+            AND c.courier_name = #{courierName}
+        </if>
+    </select>
+
+    <!-- 根据Id查询快递公司信息 -->
+    <select id="getCourierById" parameterType="String" resultType="Courier">
+        SELECT shipper_code,courier_name
+        FROM tms_courier
+        WHERE shipper_code=#{shipperCode}
+    </select>
+
+    <!-- 判断快递公司是否关联了仓库 -->
+    <select id="getBindStorageCourierNum" parameterType="String" resultType="Integer">
+        SELECT count(sc.storage_code) FROM tms_storage_courier sc
+        INNER JOIN tms_storage s ON sc.storage_code=s.storage_code AND s.is_delete='0'
+        WHERE sc.shipper_code=#{shipperCode}
+    </select>
+
+    <!-- 查询所有快递 -->
+    <select id="queryAllNew" resultType="Courier">
+        SELECT
+        shipper_code AS shipperCode,
+        courier_name AS courierName
+        FROM tms_courier
+    </select>
+</mapper>

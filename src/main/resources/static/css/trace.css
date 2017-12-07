@@ -1,0 +1,114 @@
+/**
+ * released information
+ * Project name：telecom
+ * Browse device：pc
+ * Version：15.05.12
+ * Author：xiaoming.gong
+ * chinatelecom
+ * Last Released Time on: 2015_1026_01_144041
+ */
+@charset "UTF-8";
+body, * {
+    margin: 0;
+}
+
+.status {
+    color: #06c;
+}
+
+.mall-order-list .express-info {
+    background-color: #fff;
+    border: 1px solid #06c;
+    color: #333;
+    cursor: default;
+    font-size: 14px;
+    left: 160px;
+    padding: 10px;
+    position: absolute;
+    text-align: left;
+    top: 25px;
+    width: 260px;
+    height: 480px;
+    z-index: 100;
+    overflow: scroll;
+    display: none;
+}
+
+.mall-order-list .express-info2 {
+    background-color: #fff;
+    border: 1px solid #06c;
+    color: #333;
+    cursor: default;
+    font-size: 14px;
+    right: 140px;
+    padding: 10px;
+    position: absolute;
+    text-align: left;
+    top: 25px;
+    width: 260px;
+    height: 480px;
+    z-index: 100;
+    overflow: scroll;
+    display: none;
+}
+
+.express-number {
+    border-bottom: 1px dotted #d4d4d4;
+    padding-bottom: 4px;
+}
+
+.express-details {
+    font-size: 12px;
+    padding: 5px;
+}
+
+.express-details .status {
+    padding-bottom: 20px;
+    position: relative;
+}
+
+/*active 第一条选中橘色*/
+.express-details .status.active {
+    color: #ff8200;
+}
+
+.express-details .status.active .line {
+    background-color: #ff8200;
+}
+
+.express-details .status.active .icons {
+    background-position: -87px -128px;
+}
+
+/*end*/
+
+.express-details .line {
+    background-color: #999;
+    height: 100%;
+    left: 6px;
+    position: absolute;
+    top: 10px;
+    width: 2px;
+}
+
+.express-details .express-details-bd {
+    overflow: hidden;
+}
+
+.express-none-icon {
+    display: inline-block;
+    font-style: normal;
+    background-image: url("../images/telecom-sprite.png");
+    background-repeat: no-repeat;
+    background-position: -87px -109px;
+    height: 14px;
+    width: 14px;
+    float: left;
+    margin-right: 10px;
+    margin-top: 5px;
+}
+
+.express-details-bd p{
+    line-height: 1;
+    white-space: normal;
+}

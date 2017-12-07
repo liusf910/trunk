@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ln.tms.mapper.CountRateMapper">
+
+    <!-- 清空某天的统计 -->
+    <delete id="clearCountRateByDate" parameterType="String">
+        DELETE FROM tms_count_rate WHERE count_date = #{date}
+    </delete>
+
+    <insert id="saveCountRateBatch" parameterType="java.util.List">
+        INSERT INTO tms_count_rate
+        (create_date,modify_date,storage_code,shipper_code,count_date,count_type,should_num,real_num,sent_rate)
+        VALUES
+        <foreach collection="list" item="rate" index="index" separator=",">
+            ( now(),now(),#{rate.storageCode},#{rate.shipperCode},#{rate.countDate},#{rate.countType},
+            #{rate.shouldNum},#{rate.realNum},#{rate.sentRate})
+        </foreach>
+    </insert>
+
+    <select id="queryInfoTookList" resultType="com.ln.tms.pojo.Info" parameterType="java.lang.String">
+        SELECT
+            f.shipper_code,
+            f.storage_code,
+            f.shipments_time,
+            f.took_time,
+            f.state
+        FROM
+            tms_info f
+        WHERE f.shipments_time BETWEEN DATE_FORMAT(date_sub(#{beforDays}, INTERVAL 1 DAY),'%Y-%m-%d 20:00:00')
+        AND DATE_FORMAT(#{beforDays},'%Y-%m-%d 20:00:00')
+    </select>
+
+    <select id="queryList" parameterType="CountRate" resultType="CountRate">
+        SELECT c.courier_name,tmp.sent_rate,tmp.should_num,tmp.real_num from
+        ( select cu.shipper_code,cu.courier_name from tms_courier cu where cu.shipper_code in (${shipperCode}))
+        AS c
+        LEFT JOIN
+        (SELECT cr.shipper_code,SUM(cr.should_num) as should_num,SUM(cr.real_num) as real_num,
+        ROUND(SUM(cr.real_num) / SUM(cr.should_num) * 100,2) AS sent_rate
+        FROM tms_count_rate cr INNER JOIN tms_user_storage us
+        ON cr.shipper_code = us.shipper_code AND cr.storage_code = us.storage_code
+        WHERE us.storage_code in (${storageCode}) AND us.user_id = #{userId}
+        <choose>
+            <when test="type != null and type == 'took'">
+                AND cr.count_type = '0'
+            </when>
+            <otherwise>
+                AND cr.count_type = '1'
+            </otherwise>
+        </choose>
+        <choose>
+            <when test="startDate != null and endDate != null">
+                AND cr.count_date &gt;= #{startDate} AND cr.count_date &lt;= #{endDate}
+            </when>
+            <when test="startDate != null and startDate != ''">
+                AND cr.count_date &gt;= #{startDate}
+            </when>
+            <when test="endDate != null and endDate != ''">
+                AND cr.count_date &lt;= #{endDate}
+            </when>
+            <otherwise>
+                AND cr.count_date = date_sub(CURDATE(), INTERVAL 1 DAY)
+            </otherwise>
+        </choose>
+        GROUP BY cr.shipper_code) tmp ON c.shipper_code = tmp.shipper_code
+        ORDER BY c.shipper_code ASC
+    </select>
+
+    <select id="queryTookRate" resultType="com.ln.tms.bean.CountData" parameterType="com.ln.tms.bean.CountData">
+        SELECT
+        r.storage_code,
+        r.shipper_code,
+        SUM(r.should_num) AS tookTotal,
+        SUM(r.real_num) AS tookNum
+        FROM
+        tms_count_rate r
+        WHERE
+        r.count_type = '0'
+        <if test="storageCode != null and storageCode != '' ">
+            AND r.storage_code in (${storageCode})
+        </if>
+        <choose>
+            <when test="shipmentsStartDate != null and shipmentsEndDate != null">
+                AND r.count_date &gt;= #{shipmentsStartDate} AND r.count_date &lt;= #{shipmentsEndDate}
+            </when>
+            <when test="shipmentsStartDate != null and shipmentsStartDate != ''">
+                AND r.count_date &gt;= #{shipmentsStartDate}
+            </when>
+            <when test="shipmentsEndDate != null and shipmentsEndDate != ''">
+                AND r.count_date &lt;= #{shipmentsEndDate}
+            </when>
+        </choose>
+        GROUP BY r.storage_code,r.shipper_code
+    </select>
+
+    <select id="queryInfoAll" resultType="com.ln.tms.pojo.Info" parameterType="com.ln.tms.bean.CountData">
+        SELECT
+        f.shipper_code,
+        f.storage_code,
+        f.province,
+        f.plan_time,
+        f.sign_time,
+        f.attrit_day,
+        f.state
+        FROM
+        tms_info f
+        <where>
+            <if test="shipperCode != null and shipperCode != '' ">
+                AND f.shipper_code in (${shipperCode})
+            </if>
+            <if test="storageCode != null and storageCode != '' ">
+                AND f.storage_code in (${storageCode})
+            </if>
+            <choose>
+                <when test="shipmentsStartDate != null and shipmentsEndDate != null">
+                    AND f.shipments_time BETWEEN #{shipmentsStartDate} AND #{shipmentsEndDate}
+                </when>
+                <when test="shipmentsStartDate != null and shipmentsStartDate != ''">
+                    AND f.shipments_time &gt;= #{shipmentsStartDate}
+                </when>
+                <when test="shipmentsEndDate != null and shipmentsEndDate != ''">
+                    AND f.shipments_time &lt;= #{shipmentsEndDate}
+                </when>
+            </choose>
+        </where>
+    </select>
+</mapper>

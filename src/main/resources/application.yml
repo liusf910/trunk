@@ -1,0 +1,77 @@
+server:
+    port: 8080
+    context-path:
+
+logging:
+    config: classpath:logback.xml
+    path: /opt/ln-tms/log
+
+multipart:
+       max-file-size: 20Mb
+       max-request-size: 20Mb
+
+datasource.tms.url: jdbc:mysql://10.4.33.193:3306/lntms?useUnicode=true&characterEncoding=utf-8&autoReconnect=true&allowMultiQueries=true
+datasource.tms.username: root
+datasource.tms.password: password
+datasource.tms.driverClassName: com.mysql.jdbc.Driver
+datasource.tms.initialSize: 80
+datasource.tms.minIdle: 80
+datasource.tms.maxActive: 80
+datasource.tms.timeBetweenEvictionRunsMillis: 90000
+datasource.tms.minEvictableIdleTimeMillis: 1800000
+datasource.tms.maxWait: 10000
+datasource.tms.testWhileIdle: true
+datasource.tms.testOnBorrow: false
+datasource.tms.testOnReturn: false
+datasource.tms.poolPreparedStatements: true
+datasource.tms.maxOpenPreparedStatements: 20
+datasource.tms.validationQuery: select 1
+
+#ERP数据源
+#datasource.erp.jdbcUrl: jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=10.129.209.166)(PORT=1521))(ADDRESS=(PROTOCOL=TCP)(HOST=10.129.209.167)(PORT=1521))(LOAD_BALANCE=yes)(FAILOVER=on))(CONNECT_DATA=(SERVICE_NAME=H5)))
+#datasource.erp.user: tsmdata
+#datasource.erp.password: 123456
+#datasource.erp.driverClass: oracle.jdbc.driver.OracleDriver
+#datasource.erp.initialPoolSize: 30
+#datasource.erp.maxPoolSize: 30
+#datasource.erp.minPoolSize: 30
+#datasource.erp.maxStatements: 0
+#datasource.erp.preferredTestQuery: select 1 from dual
+
+spring:
+    mvc:
+        view:
+            prefix: /templates/
+            suffix: .ftl
+    freemarker:
+        cache: false
+        request-context-attribute: request
+
+#jetty配置
+jetty:
+    maxThreads: 100
+    minThreads: 10
+    idleTimeout: 1200000
+
+#httpClient配置
+httpClient:
+    maxTotal: 500
+    defaultMaxPerRoute: 500
+    connectTimeout: 2000
+    connectionRequestTimeout: 2000
+    cetSocketTimeout: 2000
+
+#文件磁盘路径
+file:
+    disk.path: /downFile/csv/
+    server.url: http://10.4.33.144/
+
+#文件标题
+import:
+    time.limit.title: 仓库,目的省,目的市,申通E物流,圆通速递,汇通快运,中通速递,韵达快递,顺丰速运,EMS,京东快递,京东COD
+    took.title: 快递单号,快递公司,实际揽收时间,揽收超时原因
+    sign.title: 快递单号,快递公司,配送状态,实际签收时间,超时原因
+    logistics.title: 80或180单号,品项,数量,件数,预约送达日期,发货方,发货城市,承运商,预约人,预约人所属公司,预约人联系方式,仓库
+
+#solr
+solr.host: http://10.4.33.146:8081/solr

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ln.tms.mapper.RolePopedomMapper">
+    <insert id="saveRolePopedomList" parameterType="list">
+        INSERT INTO tms_role_popedom (role_id, mid, pid)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.roleId},#{item.mid},#{item.pid} )
+        </foreach>
+    </insert>
+
+    <select id="queryByRoleId" parameterType="java.lang.String" resultType="RolePopedom">
+        select rp.mid,rp.pid from tms_role_popedom rp where rp.role_id = #{roleId}
+    </select>
+
+    <delete id="clearRPbyRoleId" parameterType="java.lang.String">
+        delete from tms_role_popedom where role_id = #{roleId}
+    </delete>
+</mapper>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ln.tms.mapper.LogMapper">
+
+    <select id="queryLogAll" resultType="Log" parameterType="Log">
+        SELECT
+        g.id,
+        g.operation,
+        u.logon_name as logonName,
+        g.ip,
+        g.create_date as createDate
+        FROM
+        tms_log g
+        LEFT JOIN tms_user u ON g.user_id = u.user_id
+        WHERE 1=1
+        <if test="operation != null and operation != '' ">
+            AND g.operation LIKE concat('%',#{operation},'%')
+        </if>
+        <if test="startDate != null and startDate != '' ">
+            AND g.create_date &gt;= concat(#{startDate},' 00:00:00')
+        </if>
+        <if test="endDate != null and endDate != '' ">
+            AND g.create_date &lt;= concat(#{endDate},' 23:59:59')
+        </if>
+        ORDER BY
+        g.create_date DESC
+        LIMIT #{begin,jdbcType=INTEGER},#{end,jdbcType=INTEGER}
+    </select>
+
+    <select id="queryTotal" resultType="java.lang.Integer" parameterType="Log">
+        SELECT
+        COUNT(*)
+        FROM
+        tms_log g WHERE 1=1
+        <if test="operation != null and operation != '' ">
+            AND g.operation LIKE concat('%',#{operation},'%')
+        </if>
+        <if test="startDate != null and startDate != '' ">
+            AND g.create_date &gt;= concat(#{startDate},' 00:00:00')
+        </if>
+        <if test="endDate != null and endDate != '' ">
+            AND g.create_date &lt;= concat(#{endDate},' 23:59:59')
+        </if>
+    </select>
+
+    <!-- 根据日志id查询日志信息 -->
+    <select id="queryByIdNew" parameterType="Long" resultType="Log">
+        SELECT g.id,g.operation,g.user_id AS userId,g.content,g.parameter,
+        g.ip,u.logon_name AS logonName,g.create_date AS createDate,g.modify_date AS modifyDate
+        FROM tms_log g
+        LEFT JOIN tms_user u ON g.user_id=u.user_id
+        WHERE g.id=#{logId}
+    </select>
+</mapper>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ln.tms.mapper.TimeLimitMapper">
+    <insert id="saveTimeLimitBatch" parameterType="java.util.List">
+        INSERT INTO tms_time_limit
+        (create_date,modify_date,warehouse,province,city,ste,yt,ht,zt,yd,sf,ems,jd,jdcod )
+        VALUES
+        <foreach collection="list" item="limit" index="index" separator=",">
+            ( now(),now(),#{limit.warehouse},#{limit.province},#{limit.city},#{limit.ste},#{limit.yt},
+            #{limit.ht},#{limit.zt},#{limit.yd},#{limit.sf},#{limit.ems},#{limit.jd},#{limit.jdcod})
+        </foreach>
+    </insert>
+
+    <delete id="clearTimeLimit">
+        DELETE FROM tms_time_limit
+    </delete>
+
+    <select id="queryProvince" resultType="java.lang.String">
+         SELECT DISTINCT(province) FROM tms_time_limit ORDER BY province
+    </select>
+</mapper>

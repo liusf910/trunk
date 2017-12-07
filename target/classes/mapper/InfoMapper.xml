@@ -1,0 +1,393 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ln.tms.mapper.InfoMapper">
+
+    <insert id="saveInfoList" parameterType="list" useGeneratedKeys="true" keyProperty="infoId">
+        INSERT INTO tms_info (
+        shipper_code,
+        logistic_code,
+        order_code,
+        ext_order_code,
+        shop_code,
+        shop_name,
+        storage,
+        storage_code,
+        shipments_time,
+        qty,
+        weight,
+        linkman,
+        phone,
+        province,
+        city,
+        district,
+        addr,
+        city_scale,
+        order_state,
+        cod,
+        freight,
+        validity_day,
+        plan_time,
+        state,
+        pay_time,
+        biz_type,
+        create_date,
+        modify_date
+        )
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.shipperCode},
+            #{item.logisticCode},
+            #{item.orderCode},
+            #{item.extOrderCode},
+            #{item.shopCode},
+            #{item.shopName},
+            #{item.storage},
+            #{item.storageCode},
+            #{item.shipmentsTime},
+            #{item.qty},
+            #{item.weight},
+            #{item.linkman},
+            #{item.phone},
+            #{item.province},
+            #{item.city},
+            #{item.district},
+            #{item.addr},
+            #{item.cityScale},
+            #{item.orderState},
+            #{item.cod},
+            #{item.freight},
+            #{item.validityDay},
+            #{item.planTime},
+            #{item.state},
+            #{item.payTime},
+            #{item.bizType},
+            NOW(),
+            NOW()
+            )
+        </foreach>
+    </insert>
+
+    <update id="updateListInfo">
+        <foreach collection="list" item="item" index="index" open="" close="" separator=";">
+            UPDATE tms_info AS i
+            INNER JOIN tms_info_trace AS t ON i.info_id = t.info_id
+            <set>
+                <if test="item.lastTime != null">
+                    i.last_time=#{item.lastTime},
+                </if>
+                <if test="item.tookTime != null">
+                    i.took_time=#{item.tookTime},
+                </if>
+                <if test="item.signTime != null">
+                    i.sign_time=#{item.signTime},
+                </if>
+                <if test="item.attritTime != null">
+                    i.attrit_time=#{item.attritTime},
+                </if>
+                <if test="item.overDay != null">
+                    i.over_day=#{item.overDay},
+                </if>
+                <if test="item.attritDay != null">
+                    i.attrit_day=#{item.attritDay},
+                </if>
+                <if test="item.state != null">
+                    i.state=#{item.state},
+                </if>
+                <if test="item.signUser != null and item.signUser != ''">
+                    i.sign_user=#{item.signUser},
+                </if>
+                <if test="item.location != null and item.location != ''">
+                    i.location=#{item.location},
+                </if>
+                <if test="item.modifyDate != null">
+                    i.modify_date=#{item.modifyDate},
+                </if>
+                <if test="item.cod != null and item.cod != ''">
+                    t.info_trace=#{item.cod}
+                </if>
+            </set>
+            WHERE
+            i.info_id = #{item.infoId}
+        </foreach>
+    </update>
+
+    <select id="selectInfoByWhere" resultType="Info">
+        SELECT
+        i.info_id AS infoId,
+        i.shipper_code AS shipperCode,
+        c.courier_name AS courierName,
+        i.logistic_code AS logisticCode,
+        i.order_code AS orderCode,
+        i.ext_order_code AS extOrderCode,
+        i.shop_code AS shopCode,
+        i.shop_name AS shopName,
+        i.storage AS storage,
+        i.storage_code AS storageCode,
+        i.shipments_time AS shipmentsTime,
+        i.qty AS qty,
+        i.weight AS weight,
+        i.linkman AS linkman,
+        i.phone AS phone,
+        i.province AS province,
+        i.city AS city,
+        i.district AS district,
+        i.addr AS addr,
+        i.city_scale AS cityScale,
+        i.order_state AS orderState,
+        i.cod AS cod,
+        i.freight AS freight,
+        i.validity_day AS validityDay,
+        i.plan_time AS planTime,
+        i.location AS location,
+        i.state AS state,
+        i.last_time AS lastTime,
+        i.took_time AS tookTime,
+        i.sign_time AS signTime,
+        i.sign_user AS signUser,
+        i.over_day AS overDay,
+        i.attrit_time AS attritTime,
+        i.attrit_day AS attritDay,
+        i.create_date AS createDate,
+        i.modify_date AS modifyDate,
+        t.info_trace AS infoTrace,
+        s.file_took_time AS fileTookTime,
+        s.file_sign_time AS fileSignTime,
+        s.sign_reason AS signReason,
+        s.took_reason AS tookReason,
+        s.order_status AS orderStatus,
+        s.time_out AS timeOut,
+        s.sign_str AS signStr,
+        i.pay_time AS payTime
+        FROM
+        tms_info AS i
+        INNER JOIN tms_info_trace AS t ON i.info_id = t.info_id
+        LEFT JOIN tms_info_ts AS s ON i.shipper_code = s.shipper_code
+        AND i.logistic_code = s.logistic_code
+        LEFT JOIN tms_courier AS c ON i.shipper_code = c.shipper_code
+        <where>
+            <if test="where.userId != null and where.userId != ''">
+                CONCAT(i.storage_code,'-',i.shipper_code) IN (${where.shipperCode})
+            </if>
+            <if test="where.userId == null">
+                <if test="where.storageCode != null and where.storageCode != ''">
+                    AND i.storage_code IN (${where.storageCode})
+                </if>
+                <if test="where.shipperCode != null and where.shipperCode != ''">
+                    AND i.shipper_code IN (${where.shipperCode})
+                </if>
+            </if>
+            <if test="where.logisticCode != null and where.logisticCode != ''">
+                AND i.logistic_code = #{where.logisticCode}
+            </if>
+            <if test="where.state != null">
+                AND i.state = #{where.state}
+            </if>
+            <if test="where.orderState != null">
+                AND s.order_status = #{where.orderState}
+            </if>
+            <if test="where.tookReason != null">
+                AND s.took_reason LIKE concat('%',#{where.tookReason},'%')
+            </if>
+            <if test="where.signReason != null">
+                AND s.sign_reason LIKE concat('%',#{where.signReason},'%')
+            </if>
+            <!-- 发货时间 -->
+            <choose>
+                <when test="where.shipmentsTimeStart != null and where.shipmentsTimeEnd != null and where.shipmentsTimeStart != where.shipmentsTimeEnd">
+                    AND DATE_FORMAT(i.shipments_time,"%Y-%m-%d") BETWEEN
+                    DATE_FORMAT(#{where.shipmentsTimeStart},"%Y-%m-%d") AND
+                    DATE_FORMAT(#{where.shipmentsTimeEnd},"%Y-%m-%d")
+                </when>
+                <when test="where.shipmentsTimeStart != null and where.shipmentsTimeEnd != null and where.shipmentsTimeStart == where.shipmentsTimeEnd">
+                    AND DATE_FORMAT(i.shipments_time,"%Y-%m-%d") = DATE_FORMAT(#{where.shipmentsTimeEnd},"%Y-%m-%d")
+                </when>
+                <when test="where.shipmentsTimeStart == null and where.shipmentsTimeEnd != null">
+                    AND DATE_FORMAT(i.shipments_time,"%Y-%m-%d") &lt;= DATE_FORMAT(#{where.shipmentsTimeEnd},"%Y-%m-%d")
+                </when>
+                <when test="where.shipmentsTimeStart != null and where.shipmentsTimeEnd == null">
+                    AND DATE_FORMAT(i.shipments_time,"%Y-%m-%d") &gt;=
+                    DATE_FORMAT(#{where.shipmentsTimeStart},"%Y-%m-%d")
+                </when>
+            </choose>
+            <!-- 计划签收日期 -->
+            <choose>
+                <when test="where.planTimeStart != null and where.planTimeEnd != null and  where.planTimeStart !=  where.planTimeEnd ">
+                    AND DATE_FORMAT(i.plan_time,"%Y-%m-%d") BETWEEN DATE_FORMAT(#{where.planTimeStart},"%Y-%m-%d") AND
+                    DATE_FORMAT(#{where.planTimeEnd},"%Y-%m-%d")
+                </when>
+                <when test="where.planTimeStart != null and where.planTimeEnd != null and  where.planTimeStart ==  where.planTimeEnd ">
+                    AND DATE_FORMAT(i.plan_time,"%Y-%m-%d") = DATE_FORMAT(#{where.planTimeStart},"%Y-%m-%d")
+                </when>
+                <when test="where.planTimeStart == null and where.planTimeEnd != null">
+                    AND DATE_FORMAT(i.plan_time,"%Y-%m-%d") &lt;= DATE_FORMAT(#{where.planTimeEnd},"%Y-%m-%d")
+                </when>
+                <when test="where.planTimeStart != null and where.planTimeEnd == null">
+                    AND DATE_FORMAT(i.plan_time,"%Y-%m-%d") &gt;= DATE_FORMAT(#{where.planTimeStart},"%Y-%m-%d")
+                </when>
+            </choose>
+            <!-- 揽收时间 -->
+            <choose>
+                <when test="where.tookTimeStart != null and where.tookTimeEnd != null and  where.tookTimeStart !=  where.tookTimeEnd ">
+                    AND i.took_time BETWEEN #{where.tookTimeStart} AND #{where.tookTimeEnd}
+                </when>
+                <when test="where.tookTimeStart != null and where.tookTimeEnd != null and  where.tookTimeStart ==  where.tookTimeEnd ">
+                    AND i.took_time = #{where.tookTimeEnd}
+                </when>
+                <when test="where.tookTimeStart == null and where.tookTimeEnd != null">
+                    AND i.took_time &lt;= #{where.tookTimeEnd}
+                </when>
+                <when test="where.tookTimeStart != null and where.tookTimeEnd == null">
+                    AND i.took_time &gt;= #{where.tookTimeStart}
+                </when>
+            </choose>
+            <!-- 签收时间 -->
+            <choose>
+                <when test="where.signTimeStart != null and where.signTimeEnd != null and  where.signTimeStart !=  where.signTimeEnd ">
+                    AND i.sign_time BETWEEN #{where.signTimeStart} AND #{where.signTimeEnd}
+                </when>
+                <when test="where.signTimeStart != null and where.signTimeEnd != null and  where.signTimeStart ==  where.signTimeEnd ">
+                    AND i.sign_time = #{where.signTimeEnd}
+                </when>
+                <when test="where.signTimeStart == null and where.signTimeEnd != null">
+                    AND i.sign_time &lt;= #{where.signTimeEnd}
+                </when>
+                <when test="where.signTimeStart != null and where.signTimeEnd == null">
+                    AND i.sign_time &gt;= #{where.signTimeStart}
+                </when>
+            </choose>
+            <!-- 付款时间 -->
+            <choose>
+                <when test="where.payTimeStart != null and where.payTimeEnd != null and  where.payTimeStart !=  where.payTimeEnd ">
+                    AND i.pay_time BETWEEN #{where.payTimeStart} AND #{where.payTimeEnd}
+                </when>
+                <when test="where.payTimeStart != null and where.payTimeEnd != null and  where.payTimeStart ==  where.payTimeEnd ">
+                    AND i.pay_time = #{where.payTimeEnd}
+                </when>
+                <when test="where.payTimeStart == null and where.payTimeEnd != null">
+                    AND i.pay_time &lt;= #{where.payTimeEnd}
+                </when>
+                <when test="where.payTimeStart != null and where.payTimeEnd == null">
+                    AND i.pay_time &gt;= #{where.payTimeStart}
+                </when>
+            </choose>
+            <!-- 今日送达 -->
+            <if test="where.signToday != false">
+                AND i.plan_time = CURDATE()
+            </if>
+            <!-- 揽收超时 -->
+            <if test="where.lsOver != false">
+                AND ((i.state = '0' AND ((DATE_FORMAT(i.shipments_time, "%Y-%m-%d") != CURDATE()
+                AND i.shipments_time &lt; DATE_FORMAT(i.shipments_time, "%Y-%m-%d 20:00:00")) OR (TO_DAYS(CURDATE()) -
+                TO_DAYS(i.shipments_time) &gt; '1')))
+                OR (i.took_time IS NOT NULL AND DATE_FORMAT(i.shipments_time, "%Y-%m-%d") != DATE_FORMAT(i.took_time,
+                "%Y-%m-%d")
+                AND i.shipments_time &lt;= DATE_FORMAT(i.shipments_time, "%Y-%m-%d 20:00:00") OR TO_DAYS(i.took_time) -
+                TO_DAYS(i.shipments_time) &gt; '1'))
+            </if>
+            <if test="where.tookReasonNull != false">
+                AND s.took_reason IS NULL
+            </if>
+            <if test="where.signReasonNull != false">
+                AND s.sign_reason IS NULL
+            </if>
+            <!--配送签收超时  -->
+            <if test="where.psOver != false or where.qsOver != false">
+                <choose>
+                    <when test="where.psOver != false and where.qsOver != false">
+                        AND ((i.state NOT IN('3','4') AND i.plan_time &lt;CURDATE())
+                        OR i.over_day &gt;'0')
+                    </when>
+                    <when test="where.psOver != false">
+                        AND i.state NOT IN('3','4')
+                        AND i.plan_time &lt;CURDATE()
+                    </when>
+                    <when test="where.qsOver != false">
+                        AND i.over_day &gt;'0'
+                    </when>
+                </choose>
+            </if>
+            <!--待揽提示-->
+            <if test="where.state != null">
+                <choose>
+                    <when test="where.dlsOver == 0">
+                        AND ((i.shipments_time &lt; DATE_FORMAT(i.shipments_time,"%Y-%m-%d 20:00:00")
+                        and TO_DAYS(NOW()) - TO_DAYS(i.shipments_time) &lt;=0)
+                        OR (i.shipments_time &gt; DATE_FORMAT(i.shipments_time,"%Y-%m-%d 20:00:00")
+                        AND TO_DAYS(NOW()) - TO_DAYS(i.shipments_time)-1 &lt;=0))
+                    </when>
+                    <when test="where.dlsOver == 1">
+                        AND ((i.shipments_time &lt; DATE_FORMAT(i.shipments_time,"%Y-%m-%d 20:00:00")
+                        and TO_DAYS(NOW()) - TO_DAYS(i.shipments_time) &gt;0)
+                        OR (i.shipments_time &gt; DATE_FORMAT(i.shipments_time,"%Y-%m-%d 20:00:00")
+                        AND TO_DAYS(NOW()) - TO_DAYS(i.shipments_time)-1 &gt;0))
+                    </when>
+                    <when test="where.dlsOver ==2">
+                        AND ((i.shipments_time &lt; DATE_FORMAT(i.shipments_time,"%Y-%m-%d 20:00:00")
+                        and TO_DAYS(NOW()) - TO_DAYS(i.shipments_time)=1)
+                        OR (i.shipments_time &gt; DATE_FORMAT(i.shipments_time,"%Y-%m-%d 20:00:00")
+                        AND TO_DAYS(NOW()) - TO_DAYS(i.shipments_time)-1=1))
+                    </when>
+                    <when test="where.dlsOver ==3">
+                        AND ((i.shipments_time &lt; DATE_FORMAT(i.shipments_time,"%Y-%m-%d 20:00:00")
+                        and TO_DAYS(NOW()) - TO_DAYS(i.shipments_time)=2)
+                        OR (i.shipments_time &gt; DATE_FORMAT(i.shipments_time,"%Y-%m-%d 20:00:00")
+                        AND TO_DAYS(NOW()) - TO_DAYS(i.shipments_time)-1=2))
+                    </when>
+                    <when test="where.dlsOver ==4">
+                        AND ((i.shipments_time &lt; DATE_FORMAT(i.shipments_time,"%Y-%m-%d 20:00:00")
+                        and TO_DAYS(NOW()) - TO_DAYS(i.shipments_time) &gt;=3)
+                        OR (i.shipments_time &gt; DATE_FORMAT(i.shipments_time,"%Y-%m-%d 20:00:00")
+                        AND TO_DAYS(NOW()) - TO_DAYS(i.shipments_time)-1 &gt;=3))
+                    </when>
+                </choose>
+            </if>
+            <!--待签提示-->
+            <if test="where.signFor != false">
+                AND i.state NOT IN('0','3')
+                <choose>
+                    <when test="where.dqOver == 0">
+                        AND i.plan_time &gt;= CURDATE()
+                    </when>
+                    <when test="where.dqOver == 1">
+                        AND i.plan_time &lt; CURDATE()
+                    </when>
+                    <when test="where.dqOver == 2">
+                        AND TO_DAYS(NOW()) - TO_DAYS(i.plan_time) = '1'
+                    </when>
+                    <when test="where.dqOver == 3">
+                        AND TO_DAYS(NOW()) - TO_DAYS(i.plan_time) = '2'
+                    </when>
+                    <when test="where.dqOver == 4">
+                        AND TO_DAYS(NOW()) - TO_DAYS(i.plan_time) &gt;= '3'
+                    </when>
+                </choose>
+            </if>
+            <if test="where.rgxtFlag != false">
+                AND i.sign_time &gt; ADDDATE(s.file_sign_time,1)
+            </if>
+            <if test="where.fhTookFlag != false">
+                AND (hour(i.shipments_time)&gt;=20 AND TO_DAYS(i.took_time)=TO_DAYS(i.shipments_time))
+            </if>
+            <if test="where.fkzlsFlag != false">
+                AND i.took_time &gt; ADDDATE(i.pay_time,2)
+            </if>
+        </where>
+        <choose>
+            <when test="where.orderField !=null and where.orderField !=''">
+                ORDER BY i.${where.orderField} ${where.orderDirection}
+            </when>
+            <otherwise>
+                ORDER BY i.shipments_time DESC
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 根据userId查询对应得仓库和快递公司 -->
+    <select id="getUserStorageCourier" parameterType="String" resultType="UserStorage">
+        SELECT user_id AS userId,GROUP_CONCAT(DISTINCT storage_code) AS storageCode,
+        GROUP_CONCAT(DISTINCT shipper_code) AS shipperCode
+        FROM tms_user_storage WHERE user_id=#{userId}
+    </select>
+
+</mapper>

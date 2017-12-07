@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ln.tms.mapper.LogisticsMapper">
+
+	<select id="queryLogisticsList" resultType="LogisticsAppointment"
+		parameterType="LogisticsAppointment">
+		SELECT
+		la.appointment_id as appointmentId,
+		la.odd_num as oddNum,
+		la.date_appoint as dateAppoint,
+		la.shipper as shipper,
+		la.shipper_city as shipperCity,
+		la.carrier as carrier,
+		la.reservate_person as reservatePerson,
+		la.appoint_company as appointCompany,
+		la.phone as phone,
+		la.warehouse as warehouse,
+		la.lnec_storage_reservatnum as lnecStorageReservatnum,
+		la.lnec_acceptance_date as lnecAcceptanceDate,
+		la.serial_number as serialNumber
+		FROM
+		tms_logistics_appointment la
+		<where>
+			<if test="oddNum != null and oddNum != '' ">
+				AND la.odd_num = #{oddNum}
+			</if>
+			<if test="carrier != null and carrier != '' ">
+				AND la.carrier = #{carrier}
+			</if>
+			<if test="warehouse != null and warehouse != '' ">
+				AND la.warehouse = #{warehouse}
+			</if>
+			<if test="item != null and item != '' ">
+				AND la.item = #{item}
+			</if>
+			<if test="startDate != null and startDate != '' ">
+				AND la.date_appoint &gt;= concat(#{startDate},' 00:00:00')
+			</if>
+			<if test="endDate != null and endDate != '' ">
+				AND la.date_appoint &lt;= concat(#{endDate},' 23:59:59')
+			</if>
+			<if test="lnceStartDate != null and lnceStartDate != '' ">
+				AND la.lnec_acceptance_date &gt;= concat(#{lnceStartDate},' 00:00:00')
+			</if>
+			<if test="lnceEndDate != null and lnceEndDate != '' ">
+				AND la.lnec_acceptance_date &lt;= concat(#{lnceEndDate},' 23:59:59')
+			</if>
+		</where>
+		ORDER BY la.create_date DESC
+		LIMIT #{begin,jdbcType=INTEGER},#{end,jdbcType=INTEGER}
+	</select>
+
+	<select id="queryTotal" resultType="java.lang.Integer"
+		parameterType="LogisticsAppointment">
+		SELECT
+		COUNT(*)
+		FROM
+		tms_logistics_appointment la
+		<where>
+			<if test="oddNum != null and oddNum != '' ">
+				AND la.odd_num = #{oddNum}
+			</if>
+			<if test="carrier != null and carrier != '' ">
+				AND la.carrier = #{carrier}
+			</if>
+			<if test="warehouse != null and warehouse != '' ">
+				AND la.warehouse = #{warehouse}
+			</if>
+			<if test="item != null and item != '' ">
+				AND la.item = #{item}
+			</if>
+			<if test="startDate != null and startDate != '' ">
+				AND la.date_appoint &gt;= concat(#{startDate},' 00:00:00')
+			</if>
+			<if test="endDate != null and endDate != '' ">
+				AND la.date_appoint &lt;= concat(#{endDate},' 23:59:59')
+			</if>
+			<if test="lnceStartDate != null and lnceStartDate != '' ">
+				AND la.lnec_acceptance_date &gt;= concat(#{lnceStartDate},' 00:00:00')
+			</if>
+			<if test="lnceEndDate != null and lnceEndDate != '' ">
+				AND la.lnec_acceptance_date &lt;= concat(#{lnceEndDate},' 23:59:59')
+			</if>
+		</where>
+	</select>
+
+	<select id="queryByOddNum" parameterType="String" resultType="LogisticsAppointment">
+		SELECT
+		la.appointment_id as appointmentId,
+		la.odd_num as oddNum,
+		la.item as item,
+		la.number as number,
+		la.number_package as numberPackage,
+		la.date_appoint as dateAppoint,
+		la.shipper as shipper,
+		la.shipper_city as shipperCity,
+		la.carrier as carrier,
+		la.reservate_person as reservatePerson,
+		la.appoint_company as appointCompany,
+		la.phone as phone,
+		la.warehouse as warehouse,
+		la.remark as remark,
+		la.lnec_storage_reservatnum as lnecStorageReservatnum,
+		la.lnec_acceptance_date as lnecAcceptanceDate,
+		la.serial_number as serialNumber
+		FROM
+		tms_logistics_appointment la
+		WHERE la.odd_num =#{oddNum}
+	</select>
+
+	<insert id="insertLogisticsAppointmentList" parameterType="java.util.List">
+		INSERT INTO tms_logistics_appointment
+		(create_date,modify_date,odd_num,item,number,number_package,date_appoint,shipper,shipper_city,carrier,reservate_person,appoint_company,phone,warehouse,lnec_storage_reservatnum,lnec_acceptance_date,serial_number)
+		VALUES
+		<foreach collection="list" item="logistics" index="index"
+			separator=",">
+			(
+			now(),now(),#{logistics.oddNum},#{logistics.item},#{logistics.number},#{logistics.numberPackage},#{logistics.dateAppoint},
+			#{logistics.shipper},#{logistics.shipperCity},#{logistics.carrier},#{logistics.reservatePerson},#{logistics.appointCompany},#{logistics.phone},#{logistics.warehouse},#{logistics.lnecStorageReservatnum},#{logistics.lnecAcceptanceDate},#{logistics.serialNumber})
+		</foreach>
+	</insert>
+
+	<select id="queryByLnecAcceptanceDateAndWareHouse" resultType="java.lang.Integer"
+		parameterType="LogisticsAppointment">
+		SELECT sum(number_package) from tms_logistics_appointment la
+		where la.lnec_acceptance_date=#{lnecAcceptanceDate} AND la.warehouse
+		=#{warehouse}
+	</select>
+
+
+	<!-- 根据查询条件查询logisticsAppointment信息（不分页（数据导出所用）） -->
+	<select id="querylogisticListNoPage" resultType="LogisticsAppointment">
+		SELECT
+		la.appointment_id as appointmentId,
+		la.odd_num as oddNum,
+		la.item as item,
+		la.number as number,
+		la.number_package as numberPackage,
+		la.date_appoint as dateAppoint,
+		la.shipper as shipper,
+		la.shipper_city as shipperCity,
+		la.carrier as carrier,
+		la.reservate_person as reservatePerson,
+		la.appoint_company as appointCompany,
+		la.phone as phone,
+		la.warehouse as warehouse,
+		la.remark as remark,
+		la.lnec_storage_reservatnum as lnecStorageReservatnum,
+		la.lnec_acceptance_date as lnecAcceptanceDate
+		FROM
+		tms_logistics_appointment la
+		<where>
+			<if test="oddNum != null and oddNum != '' ">
+				AND la.odd_num = #{oddNum}
+			</if>
+			<if test="carrier != null and carrier != '' ">
+				AND la.carrier = #{carrier}
+			</if>
+			<if test="warehouse != null and warehouse != '' ">
+				AND la.warehouse = #{warehouse}
+			</if>
+			<if test="item != null and item != '' ">
+				AND la.item = #{item}
+			</if>
+			<if test="startDate != null and startDate != '' ">
+				AND la.date_appoint &gt;= concat(#{startDate},' 00:00:00')
+			</if>
+			<if test="endDate != null and endDate != '' ">
+				AND la.date_appoint &lt;= concat(#{endDate},' 23:59:59')
+			</if>
+			<if test="lnceStartDate != null and lnceStartDate != '' ">
+				AND la.lnec_acceptance_date &gt;= concat(#{lnceStartDate},' 00:00:00')
+			</if>
+			<if test="lnceEndDate != null and lnceEndDate != '' ">
+				AND la.lnec_acceptance_date &lt;= concat(#{lnceEndDate},' 23:59:59')
+			</if>
+		</where>
+	</select>
+
+	<select id="updateLogisticsDateList">
+		<foreach collection="list" item="item" index="index" open=""
+			close="" separator=";">
+			UPDATE
+			tms_logistics_appointment tla
+			SET
+			tla.lnec_acceptance_date = #{item.lnecAcceptanceDate}
+			WHERE
+			tla.appointment_id = #{item.appointmentId}
+		</foreach>
+	</select>
+
+	<select id="queryMaxNum" resultType="java.lang.String"
+		parameterType="LogisticsAppointment">
+		SELECT la.serial_number from tms_logistics_appointment la
+		where la.lnec_acceptance_date=#{lnecAcceptanceDate} AND la.warehouse
+		=#{warehouse} ORDER BY la.serial_number desc LIMIT 0,1
+	</select>
+</mapper>

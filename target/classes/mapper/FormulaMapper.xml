@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ln.tms.mapper.FormulaMapper">
+
+    <!-- 校验公式名称是否存在 -->
+    <select id="checkFormulaName" parameterType="Formula" resultType="java.lang.Integer">
+        select COUNT(*)
+        from tms_formula f
+        where 1=1 
+        <if test="formulaId != null and formulaId != '' ">
+            AND f.formula_id &lt;&gt; #{formulaId}
+        </if>
+        <if test="formulaName != null and formulaName != '' ">
+            AND f.formula_name = #{formulaName}
+        </if>
+    </select>
+</mapper>
